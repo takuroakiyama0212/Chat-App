@@ -24,6 +24,11 @@
     .link-text a:hover { text-decoration: underline; }
     .error { background: #ff6b6b22; color: #ff6b6b; padding: 12px; border-radius: 8px; margin-bottom: 14px; text-align: center; display: none; }
     .success { background: #4ade8022; color: #4ade80; padding: 12px; border-radius: 8px; margin-bottom: 14px; text-align: center; display: none; }
+    .backend-row { display: none; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .backend-row input { margin-bottom: 0; }
+    .backend-row button { width: auto; margin-bottom: 0; padding: 14px 18px; background: #0f3460; border: 1px solid #2b3f71; color: #eaeaea; }
+    .backend-row button:hover { background: #213d74; }
+    .tiny-help { font-size: 12px; color: #a0a0a0; margin-top: -8px; margin-bottom: 14px; line-height: 1.35; display: none; }
   </style>
 </head>
 <body>
@@ -32,6 +37,13 @@
       <h2>Create Account</h2>
       <div id="error" class="error"></div>
       <div id="success" class="success"></div>
+      <div id="backendRow" class="backend-row">
+        <input type="text" id="backendUrlInput" placeholder="Backend URL (e.g. https://your-server.com)">
+        <button type="button" id="saveBackendBtn">Save</button>
+      </div>
+      <div id="backendHelp" class="tiny-help">
+        You are on Firebase Hosting/Vercel. To register, set the backend URL (your Node/Socket.IO server).
+      </div>
       <input type="text" id="username" placeholder="Username">
       <div class="password-group">
         <input type="password" id="password" placeholder="Password">
@@ -51,6 +63,10 @@
   <script>
     const error = document.getElementById('error');
     const success = document.getElementById('success');
+    const backendRow = document.getElementById('backendRow');
+    const backendUrlInput = document.getElementById('backendUrlInput');
+    const saveBackendBtn = document.getElementById('saveBackendBtn');
+    const backendHelp = document.getElementById('backendHelp');
 
     function showError(msg) {
       error.textContent = msg;
@@ -62,6 +78,34 @@
       success.textContent = msg;
       success.style.display = 'block';
       error.style.display = 'none';
+    }
+
+    function isHostedStatic() {
+      const host = window.location.hostname || '';
+      return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com') || host.endsWith('.vercel.app');
+    }
+
+    function getBackendBaseUrl() {
+      if (!isHostedStatic()) return window.location.origin;
+      const stored = localStorage.getItem('backendUrl');
+      return stored ? stored.replace(/\/+$/, '') : null;
+    }
+
+    function initBackendUi() {
+      if (!isHostedStatic()) return;
+      backendRow.style.display = 'grid';
+      backendHelp.style.display = 'block';
+      backendUrlInput.value = localStorage.getItem('backendUrl') || '';
+      saveBackendBtn.onclick = () => {
+        const v = (backendUrlInput.value || '').trim().replace(/\/+$/, '');
+        if (!v) {
+          localStorage.removeItem('backendUrl');
+          showError('Backend URL cleared. Set it to register/login.');
+          return;
+        }
+        localStorage.setItem('backendUrl', v);
+        showSuccess('Backend URL saved. Please reload the page.');
+      };
     }
 
     function togglePassword(inputId, toggleId) {
@@ -93,12 +137,18 @@
       }
 
       try {
-        const res = await fetch('/register', {
+        const backendBaseUrl = getBackendBaseUrl();
+        if (!backendBaseUrl) {
+          showError('Backend URL is not set. Please set it (Backend URL) to register.');
+          return;
+        }
+        const res = await fetch(`${backendBaseUrl}/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
         
         if (res.ok) {
           showSuccess('Account created! Redirecting to login...');
@@ -106,13 +156,14 @@
             window.location.href = 'index.html';
           }, 1500);
         } else {
-          showError(data.error || 'Registration failed');
+          showError(data?.error || 'Registration failed');
         }
       } catch (err) {
-        showError('Connection error');
+        showError(`Connection error: ${err?.message || err}`);
       }
     }
 
+    window.addEventListener('load', initBackendUi);
     document.getElementById('registerBtn').onclick = register;
     document.getElementById('confirmPassword').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') register();

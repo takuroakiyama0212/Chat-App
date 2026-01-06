@@ -289,12 +289,19 @@ app.post('/auth/firebase', async (req, res) => {
     return res.json({ token, username, provider: 'firebase' });
   } catch (err) {
     console.error('Firebase auth error:', err);
-    return res.status(401).json({ error: 'Firebase authentication failed' });
+    const debug =
+      process.env.DEBUG_AUTH === 'true' ||
+      (process.env.NODE_ENV && process.env.NODE_ENV !== 'production');
+    return res.status(401).json({
+      error: 'Firebase authentication failed',
+      ...(debug ? { detail: err?.message || String(err) } : {})
+    });
   }
 });
 
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const username = String(req.body?.username || '').trim();
+  const password = req.body?.password;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
   }
@@ -322,7 +329,8 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const username = String(req.body?.username || '').trim();
+  const password = req.body?.password;
   try {
     if (pool) {
       const result = await pool.query('SELECT password_hash FROM users WHERE username = $1', [username]);

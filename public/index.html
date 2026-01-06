@@ -307,7 +307,8 @@
                 connectSocket();
                 error.style.display = 'none';
               } else {
-                showError(json.error || 'Firebase login failed');
+                const detail = json.detail ? ` (${json.detail})` : '';
+                showError((json.error || 'Firebase login failed') + detail);
               }
             } catch (e) {
               const code = e?.code ? ` (${e.code})` : '';
@@ -388,7 +389,7 @@
     }
 
     async function login() {
-      const username = document.getElementById('username').value;
+      const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       if (!username || !password) {
         showError('Please enter username and password');
