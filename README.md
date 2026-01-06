@@ -29,6 +29,10 @@ For production, you should also configure Firebase Admin credentials (recommende
   - or `FIREBASE_SERVICE_ACCOUNT_JSON=...`
   - or `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/serviceAccountKey.json`
 
+## Status
+- Google authentication is currently under investigation: we are analyzing the errors and working on a fix.
+- Everything else is working as expected.
+
 ## Roadmap
 Right now this app is **not** a multi-room chat app yet.
 Soon, it will be updated to support:
