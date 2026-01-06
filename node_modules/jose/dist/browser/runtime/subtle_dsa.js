@@ -18,6 +18,8 @@ export default function subtleDsa(alg, algorithm) {
         case 'ES384':
         case 'ES512':
             return { hash, name: 'ECDSA', namedCurve: algorithm.namedCurve };
+        case 'Ed25519':
+            return { name: 'Ed25519' };
         case 'EdDSA':
             return { name: algorithm.name };
         default:

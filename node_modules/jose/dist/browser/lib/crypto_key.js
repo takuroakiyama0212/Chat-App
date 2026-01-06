@@ -76,6 +76,11 @@ export function checkSigCryptoKey(key, alg, ...usages) {
             }
             break;
         }
+        case 'Ed25519': {
+            if (!isAlgorithm(key.algorithm, 'Ed25519'))
+                throw unusable('Ed25519');
+            break;
+        }
         case 'ES256':
         case 'ES384':
         case 'ES512': {

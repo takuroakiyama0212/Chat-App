@@ -1,420 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Chat App</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-    .container { width: 100%; max-width: 560px; padding: 16px; }
-    .panel { background: #16213e; border-radius: 16px; padding: 24px; box-shadow: 0 6px 28px rgba(0,0,0,0.35); }
-    h2 { margin-bottom: 20px; color: #e94560; text-align: center; }
-    input, button { width: 100%; padding: 14px; margin-bottom: 14px; border: none; border-radius: 8px; font-size: 16px; }
-    input { background: #0f3460; color: #fff; }
-    input::placeholder { color: #888; }
-    button { background: #e94560; color: #fff; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-    button:hover { background: #ff6b6b; }
-    .divider { display: flex; align-items: center; gap: 10px; margin: 10px 0 14px; color: #a0a0a0; font-size: 12px; }
-    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #2b3f71; opacity: 0.8; }
-    .google-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; margin-bottom: 14px; }
-    .google-hint { display: none; font-size: 12px; color: #a0a0a0; text-align: center; line-height: 1.4; }
-    .google-fallback-btn {
-      width: 320px;
-      max-width: 100%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      border: 1px solid #2b3f71;
-      background: #0f3460;
-      color: #eaeaea;
-      font-weight: 700;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.2s, opacity 0.2s;
-    }
-    .google-fallback-btn:hover { background: #213d74; }
-    .google-fallback-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
-    .google-g { width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #4285F4; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-family: Arial, sans-serif; }
-    .password-group { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 14px; }
-    .password-group input, .password-group .toggle-btn { margin-bottom: 0; }
-    .toggle-btn { width: auto; background: #0f3460; color: #ccc; border: 1px solid #2b3f71; padding: 12px; font-weight: 600; }
-    .toggle-btn:hover { background: #213d74; }
-    .link-text { text-align: center; margin-top: 16px; color: #888; }
-    .link-text a { color: #e94560; text-decoration: none; }
-    .link-text a:hover { text-decoration: underline; }
-    #chat { display: none; }
-    #messages { height: 68vh; overflow-y: auto; background: #0f3460; border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 14px; }
-    .send-group { display: flex; gap: 8px; }
-    .send-group input { flex: 1; margin-bottom: 0; }
-    .send-group button { width: auto; padding: 14px 24px; }
-    .error { background: #ff6b6b22; color: #ff6b6b; padding: 12px; border-radius: 8px; margin-bottom: 14px; text-align: center; display: none; }
-    .message-row { display: flex; align-items: flex-end; }
-    .message-row.them { justify-content: flex-start; }
-    .message-row.me { justify-content: flex-end; }
-    .message-col { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; max-width: 100%; }
-    .message-row.me .message-col { align-items: flex-end; }
-    .message-line { display: flex; align-items: flex-end; gap: 6px; max-width: 100%; }
-    .message-row.me .message-line { justify-content: flex-end; }
-    .bubble { display: inline-block; max-width: 85%; min-width: 60px; padding: 10px 14px; border-radius: 18px; position: relative; word-break: break-word; white-space: normal; font-size: 15px; line-height: 1.55; }
-    .bubble.them { background: #1a1a2e; border: 1px solid #23345c; color: #f2f2f2; border-radius: 18px 18px 18px 2px; }
-    .bubble.me { background: #00b900; color: #fff; border-radius: 18px 18px 2px 18px; }
-    .message-text { white-space: pre-wrap; word-break: break-word; }
-    .meta { display: flex; gap: 6px; font-size: 10px; opacity: 0.75; align-items: center; white-space: nowrap; margin-top: 2px; justify-content: flex-end; align-self: flex-end; text-align: right; }
-    .name-tag { font-size: 14px; font-weight: 600; color: #9dc5ff; margin-left: 6px; }
-    .message-row.me .name-tag { align-self: flex-end; margin-right: 6px; margin-left: 0; }
-    .read-label { color: #e0ffe0; visibility: hidden; font-weight: 600; font-size: 11px; }
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
 
-    /* Desktop layout */
-    @media (min-width: 900px) {
-      .container { max-width: 760px; }
-      #messages { height: 70vh; }
-      .message-line { gap: 8px; }
-    }
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/12.7.0/firebase-app-compat.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/12.7.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-database-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-functions-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-messaging-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-storage-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-analytics-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-remote-config-compat.js"></script>
+    <script defer src="/__/firebase/12.7.0/firebase-performance-compat.js"></script>
+    <!-- 
+      initialize the SDK after all desired features are loaded, set useEmulator to false
+      to avoid connecting the SDK to running emulators.
+    -->
+    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
-    /* ---- override to prevent early line breaks and keep LINE-like bubbles ---- */
-    .bubble {
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 10px 16px;
-      border-radius: 18px;
-      background-color: #00b900;
-      color: #fff;
-      max-width: 75%;
-      min-width: 80px;
-      line-height: 1.6;
-      word-break: break-word;
-      white-space: normal !important;
-    }
-    .message-text {
-      display: inline !important;
-      white-space: normal !important;
-      word-break: break-word !important;
-    }
-    .message-row.me .bubble {
-      align-self: flex-end;
-      border-radius: 18px 18px 2px 18px;
-    }
-    .message-row.them .bubble {
-      align-self: flex-start;
-      background-color: #1a1a2e;
-      color: #f2f2f2;
-      border-radius: 18px 18px 18px 2px;
-    }
-
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div id="loginSection" class="panel">
-      <h2>Login</h2>
-      <div id="error" class="error"></div>
-      <input type="text" id="username" placeholder="Username">
-      <div class="password-group">
-        <input type="password" id="password" placeholder="Password">
-        <button type="button" id="togglePassword" class="toggle-btn">Show</button>
-      </div>
-      <button id="loginBtn">Login</button>
-      <div class="divider">or</div>
-      <div id="googleWrap" class="google-wrap">
-        <button type="button" id="googleFallbackBtn" class="google-fallback-btn">
-          <span class="google-g">G</span>
-          Continue with Google
-        </button>
-        <div id="googleBtn"></div>
-        <div id="googleHint" class="google-hint"></div>
-      </div>
-      <div class="link-text">
-        Don't have an account? <a href="register.html">Register</a>
-      </div>
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
+      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, #message { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="message">
+      <h2>Welcome</h2>
+      <h1>Firebase Hosting Setup Complete</h1>
+      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
+      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
     </div>
+    <p id="load">Firebase SDK Loading&hellip;</p>
 
-    <div id="chat" class="panel">
-      <h2>Messages</h2>
-      <div id="messages"></div>
-      <div class="send-group">
-        <input type="text" id="msgInput" placeholder="Type a message...">
-        <button id="sendBtn">Send</button>
-      </div>
-    </div>
-  </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const loadEl = document.querySelector('#load');
+        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        // // The Firebase SDK is initialized and available here!
+        //
+        // firebase.auth().onAuthStateChanged(user => { });
+        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+        // firebase.firestore().doc('/foo/bar').get().then(() => { });
+        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
+        // firebase.messaging().requestPermission().then(() => { });
+        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+        // firebase.analytics(); // call to activate
+        // firebase.analytics().logEvent('tutorial_completed');
+        // firebase.performance(); // call to activate
+        //
+        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- Firebase Web SDK (optional) -->
-  <script type="module">
-    // Placeholder module script so we can dynamically import Firebase only when configured.
-  </script>
-  <script>
-    let token = null;
-    let socket = null;
-    let currentUser = null;
-    const readLabels = new Map();
-    const sentReadFor = new Set();
-
-    const error = document.getElementById('error');
-    const googleWrap = document.getElementById('googleWrap');
-    const googleFallbackBtn = document.getElementById('googleFallbackBtn');
-    const googleBtn = document.getElementById('googleBtn');
-    const googleHint = document.getElementById('googleHint');
-
-    function showError(msg) {
-      error.textContent = msg;
-      error.style.display = 'block';
-    }
-
-    async function initGoogle() {
-      try {
-        const res = await fetch('/config');
-        const cfg = await res.json();
-        // ---- Firebase Auth (preferred if configured) ----
-        if (cfg?.firebase?.enabled && cfg?.firebase?.webConfig?.apiKey && cfg?.firebase?.webConfig?.authDomain && cfg?.firebase?.webConfig?.projectId) {
-          try {
-            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-            const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-
-            const app = initializeApp(cfg.firebase.webConfig);
-            const auth = getAuth(app);
-            const provider = new GoogleAuthProvider();
-
-            googleFallbackBtn.disabled = false;
-            googleFallbackBtn.style.display = 'inline-flex';
-            googleHint.style.display = 'none';
-
-            googleFallbackBtn.onclick = async () => {
-              try {
-                const cred = await signInWithPopup(auth, provider);
-                const idToken = await cred.user.getIdToken();
-                const r = await fetch('/auth/firebase', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ idToken })
-                });
-                const data = await r.json();
-                if (data.token) {
-                  currentUser = data.username || currentUser;
-                  token = data.token;
-                  document.getElementById('loginSection').style.display = 'none';
-                  document.getElementById('chat').style.display = 'block';
-                  connectSocket();
-                  error.style.display = 'none';
-                } else {
-                  showError(data.error || 'Firebase login failed');
-                }
-              } catch (e) {
-                showError('Firebase login cancelled/failed');
-              }
-            };
-
-            // Hide Google Identity button area when Firebase is configured (to avoid confusion).
-            googleBtn.style.display = 'none';
-            return;
-          } catch (e) {
-            // Fall through to existing Google Identity flow + hints
-          }
-        }
-
-        if (!cfg?.googleClientId) {
-          googleHint.textContent = 'Googleログインは未設定です（サーバの .env に GOOGLE_CLIENT_ID を設定してください）。';
-          googleHint.style.display = 'block';
-          googleFallbackBtn.disabled = true;
-          googleFallbackBtn.style.display = 'inline-flex';
-          return;
-        }
-        if (!window.google?.accounts?.id) {
-          googleHint.textContent = 'Googleログインの読み込みに失敗しました。ページを再読み込みしてください。';
-          googleHint.style.display = 'block';
-          googleFallbackBtn.disabled = true;
-          googleFallbackBtn.style.display = 'inline-flex';
-          return;
-        }
-
-        google.accounts.id.initialize({
-          client_id: cfg.googleClientId,
-          callback: handleGoogleCredential
-        });
-        google.accounts.id.renderButton(googleBtn, {
-          theme: 'outline',
-          size: 'large',
-          width: 320,
-          text: 'signin_with'
-        });
-        googleHint.style.display = 'none';
-        googleFallbackBtn.style.display = 'none';
-      } catch (e) {
-        // ignore - Google sign-in is optional
-      }
-    }
-
-    googleFallbackBtn.addEventListener('click', () => {
-      showError('Googleログインを使うには、サーバの .env に GOOGLE_CLIENT_ID を設定して再起動してください。');
-    });
-
-    async function handleGoogleCredential(response) {
-      try {
-        const res = await fetch('/auth/google', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential: response.credential })
-        });
-        const data = await res.json();
-        if (data.token) {
-          currentUser = data.username || currentUser;
-          token = data.token;
-          document.getElementById('loginSection').style.display = 'none';
-          document.getElementById('chat').style.display = 'block';
-          connectSocket();
-          error.style.display = 'none';
-        } else {
-          showError(data.error || 'Google login failed');
-        }
-      } catch (err) {
-        showError('Connection error');
-      }
-    }
-
-    async function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      
-      if (!username || !password) {
-        showError('Please enter username and password');
-        return;
-      }
-
-      try {
-        const res = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        if (data.token) {
-          currentUser = username;
-          token = data.token;
-          document.getElementById('loginSection').style.display = 'none';
-          document.getElementById('chat').style.display = 'block';
-          connectSocket();
-          error.style.display = 'none';
-        } else {
-          showError(data.error || 'Login failed');
-        }
-      } catch (err) {
-        showError('Connection error');
-      }
-    }
-
-    function connectSocket() {
-      socket = io({ auth: { token } });
-      socket.on('connect', () => console.log('Connected'));
-      socket.on('chat message', (data) => {
-        renderMessage(data);
-        if (data.from !== currentUser && !sentReadFor.has(data.id)) {
-          sendReadReceipt(data.id);
+        try {
+          let app = firebase.app();
+          let features = [
+            'auth', 
+            'database', 
+            'firestore',
+            'functions',
+            'messaging', 
+            'storage', 
+            'analytics', 
+            'remoteConfig',
+            'performance',
+          ].filter(feature => typeof app[feature] === 'function');
+          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
+        } catch (e) {
+          console.error(e);
+          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
         }
       });
-      socket.on('message read', ({ messageId }) => {
-        const label = readLabels.get(messageId);
-        if (label) {
-          label.style.visibility = 'visible';
-        }
-      });
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function sendMessage() {
-      const msg = document.getElementById('msgInput').value;
-      if (msg && socket) {
-        socket.emit('chat message', msg);
-        document.getElementById('msgInput').value = '';
-      }
-    }
-
-    function renderMessage({ id, from, message, timestamp }) {
-      const isMe = from === currentUser;
-      const row = document.createElement('div');
-      row.className = `message-row ${isMe ? 'me' : 'them'}`;
-      row.dataset.id = id;
-
-      const column = document.createElement('div');
-      column.className = 'message-col';
-
-      const name = document.createElement('div');
-      name.className = 'name-tag';
-      name.textContent = isMe ? currentUser : from;
-      column.appendChild(name);
-
-      const messageLine = document.createElement('div');
-      messageLine.className = 'message-line';
-
-      const bubble = document.createElement('div');
-      bubble.className = `bubble ${isMe ? 'me' : 'them'}`;
-
-      const text = document.createElement('div');
-      text.className = 'message-text';
-      text.innerHTML = escapeHtml(message);
-      bubble.appendChild(text);
-
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-
-      const time = document.createElement('span');
-      const date = timestamp ? new Date(timestamp) : new Date();
-      time.textContent = date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-      meta.appendChild(time);
-
-      if (isMe) {
-        const read = document.createElement('span');
-        read.className = 'read-label';
-        read.textContent = 'Read';
-        meta.appendChild(read);
-        readLabels.set(id, read);
-      }
-
-      messageLine.appendChild(bubble);
-      column.appendChild(messageLine);
-      column.appendChild(meta);
-      row.appendChild(column);
-
-      const msgBox = document.getElementById('messages');
-      msgBox.appendChild(row);
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
-
-    function sendReadReceipt(messageId) {
-      if (!socket) return;
-      socket.emit('message read', { messageId });
-      sentReadFor.add(messageId);
-    }
-
-    function togglePassword(inputId, toggleId) {
-      const input = document.getElementById(inputId);
-      const toggle = document.getElementById(toggleId);
-      const isHidden = input.type === 'password';
-      input.type = isHidden ? 'text' : 'password';
-      toggle.textContent = isHidden ? 'Hide' : 'Show';
-    }
-
-    document.getElementById('loginBtn').onclick = login;
-    document.getElementById('sendBtn').onclick = sendMessage;
-    document.getElementById('msgInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-    document.getElementById('password').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') login();
-    });
-    document.getElementById('togglePassword').onclick = () => togglePassword('password', 'togglePassword');
-
-    window.addEventListener('load', initGoogle);
-  </script>
-</body>
+    </script>
+  </body>
 </html>

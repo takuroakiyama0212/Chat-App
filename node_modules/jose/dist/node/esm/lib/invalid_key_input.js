@@ -1,4 +1,5 @@
 function message(msg, actual, ...types) {
+    types = types.filter(Boolean);
     if (types.length > 2) {
         const last = types.pop();
         msg += `one of type ${types.join(', ')}, or ${last}.`;
@@ -16,7 +17,7 @@ function message(msg, actual, ...types) {
         msg += ` Received function ${actual.name}`;
     }
     else if (typeof actual === 'object' && actual != null) {
-        if (actual.constructor && actual.constructor.name) {
+        if (actual.constructor?.name) {
             msg += ` Received an instance of ${actual.constructor.name}`;
         }
     }

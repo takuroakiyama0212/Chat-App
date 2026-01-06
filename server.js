@@ -21,10 +21,15 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || null;
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 // Firebase (optional) - for Firebase Auth Google Sign-In
-const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || null;
-const FIREBASE_AUTH_DOMAIN = process.env.FIREBASE_AUTH_DOMAIN || null;
-const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || null;
-const FIREBASE_APP_ID = process.env.FIREBASE_APP_ID || null;
+// If env vars are not set, these fall back to the sample config the user provided.
+// Prefer setting them in `.env` in real deployments.
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyB5vcDxVhSZuNwojIuLV7CzdD2CyjlS_k8';
+const FIREBASE_AUTH_DOMAIN = process.env.FIREBASE_AUTH_DOMAIN || 'chat-app-12ed6.firebaseapp.com';
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'chat-app-12ed6';
+const FIREBASE_APP_ID = process.env.FIREBASE_APP_ID || '1:697873574008:web:ad542d50f9e1ec45d6658d';
+const FIREBASE_STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || 'chat-app-12ed6.firebasestorage.app';
+const FIREBASE_MESSAGING_SENDER_ID = process.env.FIREBASE_MESSAGING_SENDER_ID || '697873574008';
+const FIREBASE_MEASUREMENT_ID = process.env.FIREBASE_MEASUREMENT_ID || 'G-WJ2CPN9660';
 const FIREBASE_SERVICE_ACCOUNT_JSON = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || null;
 const FIREBASE_SERVICE_ACCOUNT_PATH = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || null;
 let firebaseEnabled = false;
@@ -90,13 +95,16 @@ app.get('/config', (req, res) => {
   res.json({
     googleClientId: GOOGLE_CLIENT_ID,
     firebase: {
-      enabled: firebaseEnabled,
+      enabled: firebaseEnabled || Boolean(FIREBASE_PROJECT_ID),
       webConfig: (FIREBASE_API_KEY && FIREBASE_AUTH_DOMAIN && FIREBASE_PROJECT_ID)
         ? {
             apiKey: FIREBASE_API_KEY,
             authDomain: FIREBASE_AUTH_DOMAIN,
             projectId: FIREBASE_PROJECT_ID,
-            appId: FIREBASE_APP_ID
+            appId: FIREBASE_APP_ID,
+            storageBucket: FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+            measurementId: FIREBASE_MEASUREMENT_ID
           }
         : null
     }
@@ -180,12 +188,24 @@ app.post('/auth/firebase', async (req, res) => {
   if (!idToken) {
     return res.status(400).json({ error: 'Missing idToken' });
   }
-  if (!firebaseEnabled) {
-    return res.status(500).json({ error: 'Firebase login not configured on server' });
-  }
 
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    let decoded;
+    if (firebaseEnabled) {
+      decoded = await admin.auth().verifyIdToken(idToken);
+    } else if (FIREBASE_PROJECT_ID) {
+      // Verify Firebase ID token without service account by validating signature + iss/aud via Google's JWKS.
+      const { createRemoteJWKSet, jwtVerify } = await import('jose');
+      const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
+      const verified = await jwtVerify(idToken, JWKS, {
+        issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
+        audience: FIREBASE_PROJECT_ID
+      });
+      decoded = verified.payload;
+    } else {
+      return res.status(500).json({ error: 'Firebase login not configured on server' });
+    }
+
     const username = decoded.email || decoded.uid;
     if (!username) {
       return res.status(400).json({ error: 'Firebase token missing email/uid' });
