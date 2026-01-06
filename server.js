@@ -8,11 +8,24 @@ const { Pool } = require('pg');
 const { OAuth2Client } = require('google-auth-library');
 const fs = require('fs');
 const admin = require('firebase-admin');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const CORS_ORIGINS_RAW = process.env.CORS_ORIGINS || '*'; // comma-separated list or '*'
+const CORS_ORIGINS = CORS_ORIGINS_RAW === '*'
+  ? '*'
+  : CORS_ORIGINS_RAW.split(',').map(s => s.trim()).filter(Boolean);
+
+const io = socketIo(server, {
+  cors: {
+    origin: CORS_ORIGINS,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false
+  }
+});
 const messageSenders = new Map(); // track who sent a message id so we can send read receipts back
 const memoryUsers = new Map(); // username -> { password_hash, created_at }
 const memoryMessages = []; // in-memory fallback when Postgres is not configured
@@ -96,6 +109,12 @@ async function initDB() {
 }
 
 app.use(express.static('public'));
+app.use(cors({
+  origin: CORS_ORIGINS,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}));
 app.use(express.json());
 
 const SECRET = process.env.JWT_SECRET || 'secret';
