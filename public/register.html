@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Chat App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+    .container { width: 100%; max-width: 400px; padding: 20px; }
+    .panel { background: #16213e; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    h2 { margin-bottom: 20px; color: #e94560; text-align: center; }
+    input, button { width: 100%; padding: 14px; margin-bottom: 14px; border: none; border-radius: 8px; font-size: 16px; }
+    input { background: #0f3460; color: #fff; }
+    input::placeholder { color: #888; }
+    button { background: #e94560; color: #fff; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+    button:hover { background: #ff6b6b; }
+    .password-group { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .password-group input, .password-group .toggle-btn { margin-bottom: 0; }
+    .toggle-btn { width: auto; background: #0f3460; color: #ccc; border: 1px solid #2b3f71; padding: 12px; font-weight: 600; }
+    .toggle-btn:hover { background: #213d74; }
+    .link-text { text-align: center; margin-top: 16px; color: #888; }
+    .link-text a { color: #e94560; text-decoration: none; }
+    .link-text a:hover { text-decoration: underline; }
+    .error { background: #ff6b6b22; color: #ff6b6b; padding: 12px; border-radius: 8px; margin-bottom: 14px; text-align: center; display: none; }
+    .success { background: #4ade8022; color: #4ade80; padding: 12px; border-radius: 8px; margin-bottom: 14px; text-align: center; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel">
+      <h2>Create Account</h2>
+      <div id="error" class="error"></div>
+      <div id="success" class="success"></div>
+      <input type="text" id="username" placeholder="Username">
+      <div class="password-group">
+        <input type="password" id="password" placeholder="Password">
+        <button type="button" id="togglePassword" class="toggle-btn">Show</button>
+      </div>
+      <div class="password-group">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password">
+        <button type="button" id="toggleConfirm" class="toggle-btn">Show</button>
+      </div>
+      <button id="registerBtn">Register</button>
+      <div class="link-text">
+        Already have an account? <a href="index.html">Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const error = document.getElementById('error');
+    const success = document.getElementById('success');
+
+    function showError(msg) {
+      error.textContent = msg;
+      error.style.display = 'block';
+      success.style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      success.textContent = msg;
+      success.style.display = 'block';
+      error.style.display = 'none';
+    }
+
+    function togglePassword(inputId, toggleId) {
+      const input = document.getElementById(inputId);
+      const toggle = document.getElementById(toggleId);
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      toggle.textContent = isHidden ? 'Hide' : 'Show';
+    }
+
+    async function register() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!username || !password) {
+        showError('Please fill in all fields');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showError('Passwords do not match');
+        return;
+      }
+
+      if (password.length < 4) {
+        showError('Password must be at least 4 characters');
+        return;
+      }
+
+      try {
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          showSuccess('Account created! Redirecting to login...');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+        } else {
+          showError(data.error || 'Registration failed');
+        }
+      } catch (err) {
+        showError('Connection error');
+      }
+    }
+
+    document.getElementById('registerBtn').onclick = register;
+    document.getElementById('confirmPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') register();
+    });
+    document.getElementById('togglePassword').onclick = () => togglePassword('password', 'togglePassword');
+    document.getElementById('toggleConfirm').onclick = () => togglePassword('confirmPassword', 'toggleConfirm');
+  </script>
+</body>
+</html>
