@@ -32,7 +32,7 @@ const memoryMessages = []; // in-memory fallback when Postgres is not configured
 const MAX_MEMORY_MESSAGES = Number(process.env.MAX_MEMORY_MESSAGES || 200);
 const HISTORY_LIMIT = Number(process.env.HISTORY_LIMIT || 200);
 const DATABASE_URL = process.env.DATABASE_URL;
-const pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null;
+let pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || null;
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
@@ -88,24 +88,30 @@ async function initDB() {
     console.warn('DATABASE_URL not set; running without Postgres (in-memory users, non-persistent).');
     return;
   }
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      username VARCHAR(255) UNIQUE NOT NULL,
-      password_hash VARCHAR(255) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id VARCHAR(64) PRIMARY KEY,
-      from_username VARCHAR(255) NOT NULL,
-      message TEXT NOT NULL,
-      timestamp BIGINT NOT NULL
-    )
-  `);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp)`);
-  console.log('Database initialized');
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id VARCHAR(64) PRIMARY KEY,
+        from_username VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        timestamp BIGINT NOT NULL
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp)`);
+    console.log('Database initialized');
+  } catch (err) {
+    console.warn('Database init failed; continuing without Postgres (in-memory users/messages).', err?.message || err);
+    try { await pool.end(); } catch (_) {}
+    pool = null;
+  }
 }
 
 app.use(express.static('public'));
@@ -411,7 +417,12 @@ const SKIP_DB_INIT =
 const startServer = () => {
   // Binding explicitly to 0.0.0.0 can fail in some sandboxed environments.
   // Default to localhost unless overridden.
-  const HOST = process.env.HOST || '127.0.0.1';
+  const isHosted =
+    process.env.RENDER === 'true' ||
+    process.env.VERCEL === '1' ||
+    process.env.VERCEL === 'true' ||
+    process.env.NODE_ENV === 'production';
+  const HOST = process.env.HOST || (isHosted ? '0.0.0.0' : '127.0.0.1');
   server.listen(PORT, HOST, () => console.log(`Server running on http://${HOST}:${PORT}`));
 };
 
