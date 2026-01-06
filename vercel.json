@@ -1,0 +1,11 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://chat-app-12ed6.web.app/$1",
+      "permanent": false
+    }
+  ]
+}
+
+
