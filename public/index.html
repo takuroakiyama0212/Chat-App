@@ -43,6 +43,11 @@
     .password-group input, .password-group .toggle-btn { margin-bottom: 0; }
     .toggle-btn { width: auto; background: #0f3460; color: #ccc; border: 1px solid #2b3f71; padding: 12px; font-weight: 600; }
     .toggle-btn:hover { background: #213d74; }
+    .backend-row { display: none; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .backend-row input { margin-bottom: 0; }
+    .backend-row button { width: auto; margin-bottom: 0; padding: 14px 18px; background: #0f3460; border: 1px solid #2b3f71; color: #eaeaea; }
+    .backend-row button:hover { background: #213d74; }
+    .tiny-help { font-size: 12px; color: #a0a0a0; margin-top: -8px; margin-bottom: 14px; line-height: 1.35; display: none; }
     .link-text { text-align: center; margin-top: 16px; color: #888; }
     .link-text a { color: #e94560; text-decoration: none; }
     .link-text a:hover { text-decoration: underline; }
@@ -110,6 +115,13 @@
     <div id="loginSection" class="panel">
       <h2>Login</h2>
       <div id="error" class="error"></div>
+      <div id="backendRow" class="backend-row">
+        <input type="text" id="backendUrlInput" placeholder="Backend URL (e.g. https://your-server.com)">
+        <button type="button" id="saveBackendBtn">Save</button>
+      </div>
+      <div id="backendHelp" class="tiny-help">
+        You are on Firebase Hosting. To use login/chat, set the backend URL (your Node/Socket.IO server).
+      </div>
       <input type="text" id="username" placeholder="Username">
       <div class="password-group">
         <input type="password" id="password" placeholder="Password">
@@ -152,6 +164,10 @@
     const googleFallbackBtn = document.getElementById('googleFallbackBtn');
     const googleBtn = document.getElementById('googleBtn');
     const googleHint = document.getElementById('googleHint');
+    const backendRow = document.getElementById('backendRow');
+    const backendUrlInput = document.getElementById('backendUrlInput');
+    const saveBackendBtn = document.getElementById('saveBackendBtn');
+    const backendHelp = document.getElementById('backendHelp');
 
     function showError(msg) {
       error.textContent = msg;
@@ -166,6 +182,29 @@
       if (!isFirebaseHosting) return window.location.origin;
       const stored = localStorage.getItem('backendUrl');
       return stored ? stored.replace(/\/+$/, '') : null;
+    }
+
+    function isFirebaseHosting() {
+      const host = window.location.hostname || '';
+      return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com');
+    }
+
+    function initBackendUi() {
+      if (!isFirebaseHosting()) return;
+      backendRow.style.display = 'grid';
+      backendHelp.style.display = 'block';
+      const stored = localStorage.getItem('backendUrl') || '';
+      backendUrlInput.value = stored;
+      saveBackendBtn.onclick = () => {
+        const v = (backendUrlInput.value || '').trim().replace(/\/+$/, '');
+        if (!v) {
+          localStorage.removeItem('backendUrl');
+          showError('Backend URL cleared. Set it to enable login/chat.');
+          return;
+        }
+        localStorage.setItem('backendUrl', v);
+        showError('Backend URL saved. Please reload the page.');
+      };
     }
 
     async function fetchJsonSafe(url) {
@@ -254,8 +293,6 @@
                 return;
               }
 
-              const data = await fetchJsonSafe(`${backendBaseUrl}/auth/firebase`);
-              // If server expects POST, do it properly:
               const r = await fetch(`${backendBaseUrl}/auth/firebase`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -323,13 +360,18 @@
 
     async function handleGoogleCredential(response) {
       try {
-        const backendBaseUrl = getBackendBaseUrl() || window.location.origin;
+        const backendBaseUrl = getBackendBaseUrl();
+        if (!backendBaseUrl) {
+          showError('Backend URL is not set. Please set it (Backend URL) to use Google login.');
+          return;
+        }
         const res = await fetch(`${backendBaseUrl}/auth/google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ credential: response.credential })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
         if (data.token) {
           currentUser = data.username || currentUser;
           token = data.token;
@@ -354,13 +396,18 @@
       }
 
       try {
-        const backendBaseUrl = getBackendBaseUrl() || window.location.origin;
+        const backendBaseUrl = getBackendBaseUrl();
+        if (!backendBaseUrl) {
+          showError('Backend URL is not set. Please set it (Backend URL) to use username/password login.');
+          return;
+        }
         const res = await fetch(`${backendBaseUrl}/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-        const data = await res.json();
+        const text = await res.text();
+        const data = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
         if (data.token) {
           currentUser = username;
           token = data.token;
@@ -372,7 +419,7 @@
           showError(data.error || 'Login failed');
         }
       } catch (err) {
-        showError('Connection error');
+        showError(`Connection error: ${err?.message || err}`);
       }
     }
 
@@ -495,7 +542,10 @@
     });
     document.getElementById('togglePassword').onclick = () => togglePassword('password', 'togglePassword');
 
-    window.addEventListener('load', initLoginProviders);
+    window.addEventListener('load', () => {
+      initBackendUi();
+      initLoginProviders();
+    });
   </script>
 </body>
 </html>
