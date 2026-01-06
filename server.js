@@ -15,6 +15,9 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const messageSenders = new Map(); // track who sent a message id so we can send read receipts back
 const memoryUsers = new Map(); // username -> { password_hash, created_at }
+const memoryMessages = []; // in-memory fallback when Postgres is not configured
+const MAX_MEMORY_MESSAGES = Number(process.env.MAX_MEMORY_MESSAGES || 200);
+const HISTORY_LIMIT = Number(process.env.HISTORY_LIMIT || 200);
 const DATABASE_URL = process.env.DATABASE_URL;
 const pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || null;
@@ -80,6 +83,15 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id VARCHAR(64) PRIMARY KEY,
+      from_username VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      timestamp BIGINT NOT NULL
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp)`);
   console.log('Database initialized');
 }
 
@@ -129,6 +141,43 @@ function decrypt(data) {
 
 function generateMessageId() {
   return crypto.randomBytes(MESSAGE_ID_BYTES).toString('hex');
+}
+
+async function saveMessage(message) {
+  // message: { id, from, message, timestamp }
+  if (pool) {
+    try {
+      await pool.query(
+        'INSERT INTO messages (id, from_username, message, timestamp) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+        [message.id, message.from, message.message, message.timestamp]
+      );
+    } catch (err) {
+      console.error('Failed to persist message:', err);
+    }
+    return;
+  }
+
+  memoryMessages.push(message);
+  if (memoryMessages.length > MAX_MEMORY_MESSAGES) {
+    memoryMessages.splice(0, memoryMessages.length - MAX_MEMORY_MESSAGES);
+  }
+}
+
+async function getRecentMessages(limit = HISTORY_LIMIT) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || HISTORY_LIMIT, 500));
+  if (pool) {
+    try {
+      const result = await pool.query(
+        'SELECT id, from_username AS "from", message, timestamp FROM messages ORDER BY timestamp ASC LIMIT $1',
+        [safeLimit]
+      );
+      return result.rows || [];
+    } catch (err) {
+      console.error('Failed to load message history:', err);
+      return [];
+    }
+  }
+  return memoryMessages.slice(-safeLimit);
 }
 
 async function ensureUserExists(username) {
@@ -290,10 +339,20 @@ io.use((socket, next) => {
   }
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log(`${socket.username} connected`);
 
-  socket.on('chat message', (msg) => {
+  // Send history to the newly connected client so they can see earlier messages.
+  try {
+    const history = await getRecentMessages();
+    // Populate sender map so read receipts can work for history messages too.
+    history.forEach((m) => {
+      if (m?.id && m?.from) messageSenders.set(m.id, m.from);
+    });
+    socket.emit('chat history', history);
+  } catch (_) {}
+
+  socket.on('chat message', async (msg) => {
     const message = {
       id: generateMessageId(),
       from: socket.username,
@@ -301,6 +360,7 @@ io.on('connection', (socket) => {
       timestamp: Date.now()
     };
     messageSenders.set(message.id, socket.username);
+    await saveMessage(message);
     io.emit('chat message', message);
   });
 

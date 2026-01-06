@@ -50,6 +50,9 @@ node_modules/
 # Optional npm cache directory
 .npm
 
+# Local npm cache used by the agent in this repo
+.npm-cache/
+
 # Optional eslint cache
 .eslintcache
 
