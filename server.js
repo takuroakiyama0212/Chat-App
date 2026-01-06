@@ -382,12 +382,26 @@ io.on('connection', async (socket) => {
 
 const PORT = process.env.PORT || 3000;
 initFirebaseAdmin();
-initDB().then(() => {
+// On serverless platforms (e.g., Vercel), DB initialization often fails and can crash the function.
+// Skip init on Vercel, or when explicitly disabled.
+const SKIP_DB_INIT =
+  process.env.SKIP_DB_INIT === 'true' ||
+  process.env.VERCEL === '1' ||
+  process.env.VERCEL === 'true';
+
+const startServer = () => {
   // Binding explicitly to 0.0.0.0 can fail in some sandboxed environments.
   // Default to localhost unless overridden.
   const HOST = process.env.HOST || '127.0.0.1';
   server.listen(PORT, HOST, () => console.log(`Server running on http://${HOST}:${PORT}`));
-}).catch(err => {
-  console.error('Failed to initialize database:', err);
-  process.exit(1);
-});
+};
+
+if (SKIP_DB_INIT) {
+  console.warn('Skipping DB initialization (SKIP_DB_INIT/VERCEL enabled).');
+  startServer();
+} else {
+  initDB().then(startServer).catch(err => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
+}
